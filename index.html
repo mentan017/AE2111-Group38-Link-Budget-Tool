@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AE2111-II Spacecraft Link Budget Analysis Tool</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="header-content">
+      <h1>Spacecraft Telecommunications Link Budget Tool</h1>
+      <p>AE2111-II Spacecraft Design &amp; Systems Engineering Elements II &mdash; CCSDS 401.0-B Standardized Layout</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn btn-secondary">Reset Defaults</button>
+      <button type="button" id="calc-btn" class="btn btn-primary">Calculate Link Budget</button>
+    </div>
+  </header>
+
+  <main class="dashboard-grid">
+    
+    <!-- ==========================================
+         PART 1: SYSTEM & MISSION INPUTS
+         ========================================== -->
+    <section class="panel panel-inputs" aria-labelledby="heading-inputs">
+      <div class="panel-header">
+        <h2 id="heading-inputs">1. Mission &amp; System Inputs</h2>
+        <span class="badge">Input Parameters</span>
+      </div>
+
+      <form class="input-form">
+
+        <!-- 1A. Mission & Geometry -->
+        <fieldset class="form-group">
+          <legend>Mission &amp; Orbit Geometry</legend>
+
+          <div class="field-row">
+            <label for="planet">Target Celestial Body (Planet) <span class="unit-tag">[ Selection ]</span></label>
+            <select id="planet" name="planet">
+              <option value="earth">Earth (LEO - Case 1: THEOS-2)</option>
+              <option value="moon">Moon (Case 2: LRO)</option>
+              <option value="mars">Mars (Case 3: Hope Orbiter)</option>
+              <option value="mars">Mars (Case 4: MRO)</option>
+              <option value="mercury">Mercury (Case 5: BepiColombo - Perihelion)</option>
+            </select>
+          </div>
+
+          <div class="field-row">
+            <label for="orbit-altitude">Orbit Altitude <span class="unit-tag">[ km or m ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="orbit-altitude" placeholder="820" step="any">
+              <select id="orbit-altitude-unit" aria-label="Orbit Altitude Unit">
+                <option value="km" selected>km</option>
+                <option value="m">m</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="elongation-angle">Elongation Angle (S/C-Sun to Earth-Sun) <span class="unit-tag">[ deg or rad ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="elongation-angle" placeholder="20" step="any">
+              <select id="elongation-angle-unit" aria-label="Elongation Angle Unit">
+                <option value="deg" selected>deg (&deg;)</option>
+                <option value="rad">rad</option>
+              </select>
+            </div>
+          </div>
+
+        </fieldset>
+
+        <!-- 1B. Power & RF Channel -->
+        <fieldset class="form-group">
+          <legend>Power &amp; RF Carrier Channel</legend>
+
+          <div class="field-row">
+            <label for="sc-total-power">Total Spacecraft Power (Constrained) <span class="unit-tag">[ W or dBW ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="sc-total-power" class="constrained-input" placeholder="850" step="any">
+              <select id="sc-total-power-unit" aria-label="Total Spacecraft Power Unit">
+                <option value="W" selected>W</option>
+                <option value="dBW">dBW</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="sc-tx-power">Transmitter Power (Spacecraft) <span class="unit-tag">[ W or dBW ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="sc-tx-power" placeholder="150" step="any">
+              <select id="sc-tx-power-unit" aria-label="Spacecraft Transmitter Power Unit">
+                <option value="W" selected>W</option>
+                <option value="dBW">dBW</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="gs-tx-power">Transmitter Power (Ground Station) <span class="unit-tag">[ W or dBW ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="gs-tx-power" placeholder="400" step="any">
+              <select id="gs-tx-power-unit" aria-label="Ground Station Transmitter Power Unit">
+                <option value="W" selected>W</option>
+                <option value="dBW">dBW</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="dl-freq">Downlink Frequency <span class="unit-tag">[ GHz or MHz ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="dl-freq" placeholder="2.2" step="any">
+              <select id="dl-freq-unit" aria-label="Downlink Frequency Unit">
+                <option value="GHz" selected>GHz</option>
+                <option value="MHz">MHz</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="turnaround-ratio">Turn Around Ratio (Uplink / Downlink Freq.) <span class="unit-tag">[ Ratio ]</span></label>
+            <div class="input-single">
+              <input type="text" id="turnaround-ratio" placeholder="221/240">
+              <span class="unit-addon">ul / dl</span>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- 1C. Antennas, System Temp & Losses -->
+        <fieldset class="form-group">
+          <legend>Antennas, System Temp &amp; Losses</legend>
+
+          <div class="field-row">
+            <label for="sc-ant-diam">Antenna Diameter (Spacecraft, Parabolic) <span class="unit-tag">[ m ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="sc-ant-diam" placeholder="1.0" step="any">
+              <span class="unit-addon">m</span>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="gs-ant-diam">Antenna Diameter (Ground Station, Parabolic) <span class="unit-tag">[ m ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="gs-ant-diam" placeholder="15.0" step="any">
+              <span class="unit-addon">m</span>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="ant-rad-eff">Antenna Radiation Efficiency (&eta;) <span class="unit-tag">[ - ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="ant-rad-eff" placeholder="0.55" step="any">
+              <span class="unit-addon">Factor (-)</span>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="pointing-offset">Pointing Offset Angle (Spacecraft) <span class="unit-tag">[ deg or arcmin ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="pointing-offset" placeholder="0.12" step="any">
+              <select id="pointing-offset-unit" aria-label="Pointing Offset Angle Unit">
+                <option value="deg" selected>deg (&deg;)</option>
+                <option value="arcmin">arcmin (&prime;)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="loss-tx">Loss Factor Transmitter <span class="unit-tag">[ - ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="loss-tx" placeholder="0.8" step="any">
+              <span class="unit-addon">Factor (-)</span>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="loss-rx">Loss Factor Receiver <span class="unit-tag">[ - ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="loss-rx" placeholder="0.7" step="any">
+              <span class="unit-addon">Factor (-)</span>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="gs-tsys">Ground Station System Temp (T<sub>sys,GS</sub>) <span class="unit-tag">[ K or dBK ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="gs-tsys" placeholder="135" step="any">
+              <select id="gs-tsys-unit" aria-label="Ground Station System Temperature Unit">
+                <option value="K" selected>K</option>
+                <option value="dBK">dBK</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="sc-tsys">Spacecraft System Temp (T<sub>sys,SC</sub>) <span class="unit-tag">[ K or dBK ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="sc-tsys" placeholder="600" step="any">
+              <select id="sc-tsys-unit" aria-label="Spacecraft System Temperature Unit">
+                <option value="K" selected>K</option>
+                <option value="dBK">dBK</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="atm-attenuation">Atmospheric Attenuation (Zenith / CD) <span class="unit-tag">[ dB or - ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="atm-attenuation" placeholder="0.1" step="any">
+              <select id="atm-attenuation-unit" aria-label="Atmospheric Attenuation Unit">
+                <option value="dB" selected>dB</option>
+                <option value="factor">Factor (-)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="phase-jitter-loss">Phase Jitter Loss <span class="unit-tag">[ dB ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="phase-jitter-loss" placeholder="0.2" step="any">
+              <span class="unit-addon">dB</span>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="elevation-angle">Antenna Elevation Angle <span class="unit-tag">[ deg or rad ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="elevation-angle" placeholder="10" step="any">
+              <select id="elevation-angle-unit" aria-label="Antenna Elevation Angle Unit">
+                <option value="deg" selected>deg (&deg;)</option>
+                <option value="rad">rad</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- 1D. Payload & Data Generation -->
+        <fieldset class="form-group">
+          <legend>Payload (Line-Scanning Imager) &amp; Data Handling</legend>
+
+          <div class="field-row">
+            <label for="swath-angle">Payload Swath Width Angle <span class="unit-tag">[ deg or rad ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="swath-angle" placeholder="45" step="any">
+              <select id="swath-angle-unit" aria-label="Swath Width Angle Unit">
+                <option value="deg" selected>deg (&deg;)</option>
+                <option value="rad">rad</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="pixel-size">Payload Pixel Size <span class="unit-tag">[ arcmin or deg ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="pixel-size" placeholder="0.01" step="any">
+              <select id="pixel-size-unit" aria-label="Payload Pixel Size Unit">
+                <option value="arcmin" selected>arcmin (&prime;)</option>
+                <option value="deg">deg (&deg;)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="bits-per-pixel">Payload Bits per Pixel <span class="unit-tag">[ bits/px ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="bits-per-pixel" placeholder="32" step="1">
+              <span class="unit-addon">bits/px</span>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="duty-cycle">Payload Duty Cycle <span class="unit-tag">[ % or - ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="duty-cycle" placeholder="100" step="any">
+              <select id="duty-cycle-unit" aria-label="Payload Duty Cycle Unit">
+                <option value="pct" selected>%</option>
+                <option value="dec">Factor (-)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="downlink-time">Payload Downlink Time per Day <span class="unit-tag">[ hr/day or s/day ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="downlink-time" placeholder="0.5" step="any">
+              <select id="downlink-time-unit" aria-label="Payload Downlink Time Unit">
+                <option value="hr" selected>hr/day</option>
+                <option value="s">s/day</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="compression-ratio">Compression Ratio <span class="unit-tag">[ - ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="compression-ratio" placeholder="1.83" step="any">
+              <span class="unit-addon">Factor (-)</span>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="line-rate">Line Rate (Imager Scan Rate) <span class="unit-tag">[ lines/s or klines/s ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="line-rate" placeholder="5200" step="any">
+              <select id="line-rate-unit" aria-label="Line Rate Unit">
+                <option value="lps" selected>lines/s (Hz)</option>
+                <option value="klps">klines/s (kHz)</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- 1E. Modulation, Coding & BER -->
+        <fieldset class="form-group">
+          <legend>Modulation, Coding &amp; Link Quality</legend>
+
+          <div class="field-row">
+            <label for="modulation">Modulation Type <span class="unit-tag">[ Selection ]</span></label>
+            <select id="modulation" name="modulation">
+              <option value="bpsk" selected>BPSK (Binary Phase Shift Keying)</option>
+              <option value="qpsk">QPSK / OQPSK (Quadrature PSK)</option>
+              <option value="16apsk">16-APSK (Higher-Order Modulation)</option>
+            </select>
+          </div>
+
+          <div class="field-row">
+            <label for="coding">Channel Coding Scheme <span class="unit-tag">[ Selection ]</span></label>
+            <select id="coding" name="coding">
+              <!-- Populated dynamically by script.js based on selected modulation -->
+            </select>
+          </div>
+
+          <div class="field-row">
+            <label for="req-ber">Required Bit Error Rate (BER) <span class="unit-tag">[ - ]</span></label>
+            <select id="req-ber" name="req-ber">
+              <option value="1e-6" selected>10⁻⁶ (1e-6)</option>
+              <option value="1e-5">10⁻⁵ (1e-5)</option>
+            </select>
+          </div>
+
+          <div class="field-row">
+            <label for="ul-data-rate">Required Uplink Data Rate <span class="unit-tag">[ bit/s or kbit/s ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="ul-data-rate" placeholder="100000000" step="any">
+              <select id="ul-data-rate-unit" aria-label="Required Uplink Data Rate Unit">
+                <option value="bps" selected>bit/s</option>
+                <option value="kbps">kbit/s</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- 1F. Communications Protocols Section -->
+        <fieldset class="form-group protocol-group">
+          <legend>CCSDS Communications Protocols</legend>
+
+          <div class="field-row">
+            <label for="proto-dlp">Data Link Protocol (DLP) <span class="unit-tag">[ Layer 2 ]</span></label>
+            <select id="proto-dlp" name="proto-dlp">
+              <option value="tm-tc">CCSDS TM / TC Space Data Link</option>
+              <option value="aos">CCSDS AOS (Advanced Orbiting Systems)</option>
+              <option value="ulp">CCSDS USLP (Unified Space Data Link)</option>
+              <option value="prox1">CCSDS Proximity-1</option>
+            </select>
+          </div>
+
+          <div class="field-row">
+            <label for="proto-net">Network / Transport Protocol <span class="unit-tag">[ Layer 3/4 ]</span></label>
+            <select id="proto-net" name="proto-net">
+              <option value="spp">CCSDS Space Packet Protocol (SPP)</option>
+              <option value="cfdp">CCSDS File Delivery Protocol (CFDP)</option>
+              <option value="dtn">Bundle Protocol (DTN)</option>
+            </select>
+          </div>
+
+          <div class="field-row">
+            <label for="proto-overhead">Protocol Frame Overhead <span class="unit-tag">[ % or bits/frame ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="proto-overhead" placeholder="5.0" step="any">
+              <select id="proto-overhead-unit" aria-label="Protocol Overhead Unit">
+                <option value="pct" selected>%</option>
+                <option value="bits">bits/frame</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+      </form>
+    </section>
+
+    <!-- ==========================================
+         PART 2: DOWNLINK OUTPUT (SPACE-TO-EARTH)
+         ========================================== -->
+    <section class="panel panel-output panel-downlink" aria-labelledby="heading-downlink">
+      <div class="panel-header">
+        <div>
+          <h2 id="heading-downlink">2. Downlink Output</h2>
+          <p class="panel-subtitle">Space-to-Earth Link Budget (CCSDS Table 4.1.2)</p>
+        </div>
+        <span class="badge badge-dl">S/C &rarr; E/S</span>
+      </div>
+
+      <!-- Highlighted Summary Metrics -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <span class="kpi-label">Transmit EIRP</span>
+          <div class="kpi-value" id="kpi-dl-eirp">--.-- <small>dBW</small></div>
+          <span class="kpi-sub" id="kpi-dl-eirp-sub">--.-- dBm / --.-- W</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Free Space Loss (L<sub>s</sub>)</span>
+          <div class="kpi-value" id="kpi-dl-fsl">--.-- <small>dB</small></div>
+          <span class="kpi-sub" id="kpi-dl-fsl-sub">Range: -- km</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Received E<sub>b</sub>/N<sub>0</sub></span>
+          <div class="kpi-value" id="kpi-dl-ebn0">--.-- <small>dB</small></div>
+          <span class="kpi-sub" id="kpi-dl-ebn0-sub">Req: --.-- dB</span>
+        </div>
+        <div class="kpi-card kpi-margin">
+          <span class="kpi-label">Downlink Margin</span>
+          <div class="kpi-value" id="kpi-dl-margin">--.-- <small>dB</small></div>
+          <span class="kpi-sub">Min. Required: 3.00 dB</span>
+        </div>
+      </div>
+
+      <!-- Payload Data Volume & Rate Table -->
+      <div class="table-block">
+        <h3>Payload Data Collection &amp; Channel Rates</h3>
+        <table class="budget-table">
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Value</th>
+              <th>Alt. Unit Value</th>
+              <th>Unit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Data Collected (Raw, per Orbit/Day)</strong></td>
+              <td class="num" id="out-dl-raw-bits">--</td>
+              <td class="num" id="out-dl-raw-gb">-- GB</td>
+              <td><span class="unit-tag">bits</span></td>
+            </tr>
+            <tr>
+              <td><strong>Data Collected (Compressed, per Day)</strong></td>
+              <td class="num" id="out-dl-comp-bits">--</td>
+              <td class="num" id="out-dl-comp-gb">-- GB</td>
+              <td><span class="unit-tag">bits</span></td>
+            </tr>
+            <tr>
+              <td>Computed Line Scan Rate</td>
+              <td class="num" id="out-dl-line-rate">--</td>
+              <td class="num" id="out-dl-line-rate-khz">-- kHz</td>
+              <td><span class="unit-tag">lines/s</span></td>
+            </tr>
+            <tr>
+              <td>Generated Payload Data Rate (R<sub>G</sub>)</td>
+              <td class="num" id="out-dl-gen-rate">--</td>
+              <td class="num" id="out-dl-gen-rate-mbps">-- Mbps</td>
+              <td><span class="unit-tag">bit/s</span></td>
+            </tr>
+            <tr>
+              <td>Required Downlink Info Bit Rate (R<sub>D</sub>)</td>
+              <td class="num" id="out-dl-req-rate">--</td>
+              <td class="num" id="out-dl-req-rate-Mbps">-- Mbps</td>
+              <td><span class="unit-tag">bit/s</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Complete Link Budget Table (CCSDS Ref as Tooltips) -->
+      <div class="table-block">
+        <h3>Space-to-Earth Link Budget Breakdown (in dB)</h3>
+        <table class="budget-table">
+          <thead>
+            <tr>
+              <th>Link Budget Parameter</th>
+              <th>Design Value</th>
+              <th>Unit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="section-divider">
+              <td colspan="3">S/C Transmitting RF Carrier Channel</td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 151">Spacecraft Transmitter Power (P<sub>t,SC</sub>)</span></td>
+              <td class="num" id="out-dl-tx-power">--.--</td>
+              <td><span class="unit-tag">dBW</span></td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 54">Transmitter Circuit Loss (L<sub>l</sub>)</span></td>
+              <td class="num" id="out-dl-loss-tx">--.--</td>
+              <td><span class="unit-tag">dB</span></td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 152"><strong>S/C Transmit Antenna Peak Gain (G<sub>t,SC</sub>)</strong></span></td>
+              <td class="num" id="out-dl-sc-gain">--.--</td>
+              <td><span class="unit-tag">dBi</span></td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 55"><strong>S/C Transmit Pointing Loss (L<sub>pr,SC</sub>)</strong></span></td>
+              <td class="num" id="out-dl-pointing-tx">--.--</td>
+              <td><span class="unit-tag">dB</span></td>
+            </tr>
+            <tr class="highlight-row">
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 153"><strong>Spacecraft Transmit EIRP</strong></span></td>
+              <td class="num" id="out-dl-eirp">--.--</td>
+              <td><span class="unit-tag">dBW</span></td>
+            </tr>
+
+            <tr class="section-divider">
+              <td colspan="3">Space-to-Earth Propagation Path</td>
+            </tr>
+            <tr class="highlight-row">
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 164"><strong>Free Space Path Loss (L<sub>s,DL</sub>)</strong></span></td>
+              <td class="num" id="out-dl-fsl">--.--</td>
+              <td><span class="unit-tag">dB</span></td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 165">Atmospheric Attenuation (L<sub>a,DL</sub>)</span></td>
+              <td class="num" id="out-dl-atm-loss">--.--</td>
+              <td><span class="unit-tag">dB</span></td>
+            </tr>
+
+            <tr class="section-divider">
+              <td colspan="3">Earth Station Receiving RF &amp; Data Channel</td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 167"><strong>Ground Station Receive Antenna Gain (G<sub>r,GS</sub>)</strong></span></td>
+              <td class="num" id="out-dl-gs-gain">--.--</td>
+              <td><span class="unit-tag">dBi</span></td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 68"><strong>Ground Station Receive Pointing Loss (L<sub>pr,GS</sub>)</strong></span></td>
+              <td class="num" id="out-dl-pointing-rx">--.--</td>
+              <td><span class="unit-tag">dB</span></td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 69">Receiver Circuit Loss (L<sub>r</sub>)</span></td>
+              <td class="num" id="out-dl-loss-rx">--.--</td>
+              <td><span class="unit-tag">dB</span></td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 73">Phase Jitter &amp; Demodulator Implementation Loss</span></td>
+              <td class="num" id="out-dl-jitter-loss">--.--</td>
+              <td><span class="unit-tag">dB</span></td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 168">System Noise Spectral Density (N<sub>0</sub> = k&middot;T<sub>sys,GS</sub>)</span></td>
+              <td class="num" id="out-dl-noise-density">--.--</td>
+              <td><span class="unit-tag">dBW/Hz</span></td>
+            </tr>
+            <tr class="highlight-row">
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 173"><strong>Received Downlink E<sub>b</sub>/N<sub>0</sub></strong></span></td>
+              <td class="num" id="out-dl-ebn0">--.--</td>
+              <td><span class="unit-tag">dB</span></td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 174"><strong>Required Downlink E<sub>b</sub>/N<sub>0</sub> (at target BER)</strong></span></td>
+              <td class="num" id="out-dl-req-ebn0">--.--</td>
+              <td><span class="unit-tag">dB</span></td>
+            </tr>
+            <tr class="margin-row">
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 175"><strong>Downlink Performance Margin</strong></span></td>
+              <td class="num" id="out-dl-margin">--.--</td>
+              <td><span class="unit-tag">dB</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         PART 3: UPLINK OUTPUT (EARTH-TO-SPACE)
+         ========================================== -->
+    <section class="panel panel-output panel-uplink" aria-labelledby="heading-uplink">
+      <div class="panel-header">
+        <div>
+          <h2 id="heading-uplink">3. Uplink Output</h2>
+          <p class="panel-subtitle">Earth-to-Space Link Budget (CCSDS Table 4.1.2)</p>
+        </div>
+        <span class="badge badge-ul">E/S &rarr; S/C</span>
+      </div>
+
+      <!-- Highlighted Summary Metrics -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <span class="kpi-label">Transmit EIRP</span>
+          <div class="kpi-value" id="kpi-ul-eirp">--.-- <small>dBW</small></div>
+          <span class="kpi-sub" id="kpi-ul-eirp-sub">--.-- dBm / --.-- W</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Free Space Loss (L<sub>s</sub>)</span>
+          <div class="kpi-value" id="kpi-ul-fsl">--.-- <small>dB</small></div>
+          <span class="kpi-sub" id="kpi-ul-fsl-sub">Freq: --.-- GHz</span>
+        </div>
+        <div class="kpi-card">
+          <span class="kpi-label">Received E<sub>b</sub>/N<sub>0</sub></span>
+          <div class="kpi-value" id="kpi-ul-ebn0">--.-- <small>dB</small></div>
+          <span class="kpi-sub" id="kpi-ul-ebn0-sub">Req: --.-- dB</span>
+        </div>
+        <div class="kpi-card kpi-margin">
+          <span class="kpi-label">Uplink Margin</span>
+          <div class="kpi-value" id="kpi-ul-margin">--.-- <small>dB</small></div>
+          <span class="kpi-sub">Min. Required: 3.00 dB</span>
+        </div>
+      </div>
+
+      <!-- Uplink Data Volume & Rate Table -->
+      <div class="table-block">
+        <h3>Telecommand Data Volume &amp; Channel Rates</h3>
+        <table class="budget-table">
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Value</th>
+              <th>Alt. Unit Value</th>
+              <th>Unit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Required Uplink Data Rate (R<sub>UL</sub>)</strong></td>
+              <td class="num" id="out-ul-req-rate">--</td>
+              <td class="num" id="out-ul-req-rate-dbhz">-- Mbps</td>
+              <td><span class="unit-tag">bit/s</span></td>
+            </tr>
+            <tr>
+              <td>Derived Uplink Carrier Frequency (f<sub>UL</sub>)</td>
+              <td class="num" id="out-ul-freq">--.--</td>
+              <td class="num" id="out-ul-freq-mhz">-- MHz</td>
+              <td><span class="unit-tag">GHz</span></td>
+            </tr>
+            <tr>
+              <td>Effective Channel Symbol Rate (with Coding/Protocol)</td>
+              <td class="num" id="out-ul-sym-rate">--</td>
+              <td class="num" id="out-ul-sym-rate-ksps">-- ksps</td>
+              <td><span class="unit-tag">sym/s</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Complete Link Budget Table (CCSDS Ref as Tooltips) -->
+      <div class="table-block">
+        <h3>Earth-to-Space Link Budget Breakdown (in dB)</h3>
+        <table class="budget-table">
+          <thead>
+            <tr>
+              <th>Link Budget Parameter</th>
+              <th>Design Value</th>
+              <th>Unit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="section-divider">
+              <td colspan="3">Earth Station Transmitting RF Carrier Channel</td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 101">Ground Station Transmitter Power (P<sub>t,GS</sub>)</span></td>
+              <td class="num" id="out-ul-tx-power">--.--</td>
+              <td><span class="unit-tag">dBW</span></td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 4">Transmitter Circuit Loss (L<sub>l</sub>)</span></td>
+              <td class="num" id="out-ul-loss-tx">--.--</td>
+              <td><span class="unit-tag">dB</span></td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 102"><strong>G/S Transmit Antenna Peak Gain (G<sub>t,GS</sub>)</strong></span></td>
+              <td class="num" id="out-ul-gs-gain">--.--</td>
+              <td><span class="unit-tag">dBi</span></td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 5"><strong>G/S Transmit Pointing Loss (L<sub>pr,GS</sub>)</strong></span></td>
+              <td class="num" id="out-ul-pointing-tx">--.--</td>
+              <td><span class="unit-tag">dB</span></td>
+            </tr>
+            <tr class="highlight-row">
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 103"><strong>Ground Station Transmit EIRP</strong></span></td>
+              <td class="num" id="out-ul-eirp">--.--</td>
+              <td><span class="unit-tag">dBW</span></td>
+            </tr>
+
+            <tr class="section-divider">
+              <td colspan="3">Earth-to-Space Propagation Path</td>
+            </tr>
+            <tr class="highlight-row">
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 114"><strong>Free Space Path Loss (L<sub>s,UL</sub>)</strong></span></td>
+              <td class="num" id="out-ul-fsl">--.--</td>
+              <td><span class="unit-tag">dB</span></td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 115">Atmospheric Attenuation (L<sub>a,UL</sub>)</span></td>
+              <td class="num" id="out-ul-atm-loss">--.--</td>
+              <td><span class="unit-tag">dB</span></td>
+            </tr>
+
+            <tr class="section-divider">
+              <td colspan="3">Spacecraft Receiving RF &amp; Data Channel</td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 117"><strong>Spacecraft Receive Antenna Gain (G<sub>r,SC</sub>)</strong></span></td>
+              <td class="num" id="out-ul-sc-gain">--.--</td>
+              <td><span class="unit-tag">dBi</span></td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 19"><strong>Spacecraft Receive Pointing Loss (L<sub>pr,SC</sub>)</strong></span></td>
+              <td class="num" id="out-ul-pointing-rx">--.--</td>
+              <td><span class="unit-tag">dB</span></td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 20">Receiver Circuit Loss (L<sub>r</sub>)</span></td>
+              <td class="num" id="out-ul-loss-rx">--.--</td>
+              <td><span class="unit-tag">dB</span></td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 25">Phase Jitter &amp; Demodulator Implementation Loss</span></td>
+              <td class="num" id="out-ul-jitter-loss">--.--</td>
+              <td><span class="unit-tag">dB</span></td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 118">System Noise Spectral Density (N<sub>0</sub> = k&middot;T<sub>sys,SC</sub>)</span></td>
+              <td class="num" id="out-ul-noise-density">--.--</td>
+              <td><span class="unit-tag">dBW/Hz</span></td>
+            </tr>
+            <tr class="highlight-row">
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 123"><strong>Received Uplink E<sub>b</sub>/N<sub>0</sub></strong></span></td>
+              <td class="num" id="out-ul-ebn0">--.--</td>
+              <td><span class="unit-tag">dB</span></td>
+            </tr>
+            <tr>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 124"><strong>Required Uplink E<sub>b</sub>/N<sub>0</sub> (at target BER)</strong></span></td>
+              <td class="num" id="out-ul-req-ebn0">--.--</td>
+              <td><span class="unit-tag">dB</span></td>
+            </tr>
+            <tr class="margin-row">
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 125"><strong>Uplink Performance Margin</strong></span></td>
+              <td class="num" id="out-ul-margin">--.--</td>
+              <td><span class="unit-tag">dB</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+</body>
+</html>
