@@ -30,7 +30,6 @@ function getInputs() {
     "gs-tsys",
     "sc-tsys",
     "atm-attenuation",
-    "phase-jitter-loss",
     "swath-angle",
     "pixel-size",
     "bits-per-pixel",
@@ -44,12 +43,13 @@ function getInputs() {
     "ul-data-rate",
     "proto-dlp",
     "proto-net",
-    "proto-overhead"
+    "proto-overhead",
+    "gs-pointing-error"
   ];
 
   for (const id of requiredIds) {
     if (getRaw(id) === "") {
-      console.warn(`Missing required input: ${id}`);
+      window.alert(`Missing required input: ${id}`);
       return 0; // Return 0 if any required field is empty
     }
   }
@@ -170,7 +170,7 @@ function getInputs() {
         case 0.98: atmAttenuation = 1.679; break;
         case 0.99: atmAttenuation = 2.520; break;
         default: atmAttenuation = 0.548; // Defaults at CD = 0.90
-}
+      }
     }else if(dlFreq >= 6e9){ // X-band
       switch (atmAttenuation) {
         case 0: atmAttenuation = 0.039; break;
@@ -194,7 +194,7 @@ function getInputs() {
         case 0.98: atmAttenuation = 0.147; break;
         case 0.99: atmAttenuation = 0.205; break;
         default: atmAttenuation = 0.068; // Defaults at CD = 0.90
-}
+      }
     }else{
       switch (atmAttenuation) {
         case 0: atmAttenuation = 0.036; break;
@@ -218,11 +218,35 @@ function getInputs() {
         case 0.98: atmAttenuation = 0.043; break;
         case 0.99: atmAttenuation = 0.048; break;
         default: atmAttenuation = 0.038; // Defaults at CD = 0.90
-}
+      }
     }
   }
-
-  const phaseJitterLoss = parseFloat(getRaw("phase-jitter-loss")); // dB
+  // Ground Station Pointing Error -> deg
+  let gsPointingError = parseFloat(getRaw("gs-pointing-error"));
+  if(getUnit("gs-pointing-error") === "factor"){
+    switch (gsPointingError){
+      case 0: gsPointingError = 0; break;
+      case 0.1: gsPointingError = 0.366; break;
+      case 0.2: gsPointingError = 0.533; break;
+      case 0.3: gsPointingError = 0.673; break;
+      case 0.4: gsPointingError = 0.806; break;
+      case 0.5: gsPointingError = 0.939; break;
+      case 0.545: gsPointingError = 1; break;
+      case 0.6: gsPointingError = 1.08; break;
+      case 0.7: gsPointingError = 1.238; break;
+      case 0.8: gsPointingError = 1.431; break;
+      case 0.9: gsPointingError = 1.712; break;
+      case 0.95: gsPointingError = 1.953; break;
+      case 0.98: gsPointingError = 2.232; break;
+      case 0.99: gsPointingError = 2.421; break;
+      default: gsPointingError = 1.712; // Defaults at CD = 0.90
+    }
+    if(dlFreq >= 30e9){
+      gsPointingError*=0.0042;
+    }else{
+      gsPointingError*=0.006;
+    }
+  }
 
   // 5. Read & Convert Payload & Data Generation
   // Swath Width Angle -> deg
@@ -294,7 +318,6 @@ function getInputs() {
     gsTsys,
     scTsys,
     atmAttenuation,
-    phaseJitterLoss,
     PLSwathAngle,
     PLPixelSize,
     PLBitsPerPixel,
@@ -309,7 +332,8 @@ function getInputs() {
     protoDlp,
     protoNet,
     protoOverhead,
-    protoOverheadUnit
+    protoOverheadUnit,
+    gsPointingError
   };
 }
 
@@ -337,15 +361,9 @@ function computePayloadOutputs(inp) {
   const DlFSL = 10 * Math.log10(Math.pow((4 * Math.PI * inp.orbitAltitude * inp.dlFreq) / speedOfLight, 2));
   const DlAtmosphericAttenuation = inp.atmAttenuation / Math.sin(inp.elevationAngle * (Math.PI / 180));
 
-  let DlPointingLossRx = 0.02;
-  if (inp.dlFreq >= 30e9) {
-    DlPointingLossRx = 2.0;
-  } else if (inp.dlFreq >= 6e9) {
-    DlPointingLossRx = 0.13;
-  }
+  const DlPointingLossRx = 12 * Math.pow((inp.gsPointingError * inp.dlFreq * inp.gsAntDiam) / (21 * 1e9), 2);
 
   const DlCircuitLossRx = inp.lossRx;
-  const DlPhaseJitterLoss = inp.phaseJitterLoss;
   const DlSystemNoiseSpectralDensity = 10 * Math.log10(boltzmann * inp.gsTsys);
 
   const DlReceivedEbN0 =
@@ -355,7 +373,6 @@ function computePayloadOutputs(inp) {
     DlGSAntennaGain -
     DlPointingLossRx -
     DlCircuitLossRx -
-    DlPhaseJitterLoss -
     DlSystemNoiseSpectralDensity - 10 * Math.log10(dlRequiredDataRate);
   const DlRequiredEbN0 = getRequiredEbN0(inp.modulation, inp.coding, inp.reqBer);
   const DlMargin = DlReceivedEbN0 - DlRequiredEbN0;
@@ -373,12 +390,7 @@ function computePayloadOutputs(inp) {
 
   const UlTransmitterPower = inp.gsTxPower;
   const UlCircuitLossTx = inp.lossTx;
-  let UlPointingLossTx = 0.02;
-  if (UlFreq >= 30e9) {
-    UlPointingLossTx = 2.0;
-  } else if (UlFreq >= 6e9) {
-    UlPointingLossTx = 0.13;
-  }
+  const UlPointingLossTx = 12 * Math.pow((inp.gsPointingError * UlFreq * inp.gsAntDiam) / (21 * 1e9), 2);
 
   const UlEIRP = UlTransmitterPower - UlCircuitLossTx + UlGSAntennaGain - UlPointingLossTx;
   const UlFSL = 10 * Math.log10(Math.pow((4 * Math.PI * inp.orbitAltitude * UlFreq) / speedOfLight, 2));
@@ -386,7 +398,6 @@ function computePayloadOutputs(inp) {
 
   const UlPointingLossRx = 12 * Math.pow((inp.pointingOffset * UlFreq * inp.scAntDiam) / (21 * 1e9), 2);
   const UlCircuitLossRx = inp.lossRx;
-  const UlPhaseJitterLoss = inp.phaseJitterLoss;
   const UlSystemNoiseSpectralDensity = 10 * Math.log10(boltzmann * inp.scTsys);
 
 
@@ -397,7 +408,6 @@ function computePayloadOutputs(inp) {
     UlSCAntennaGain -
     UlPointingLossRx -
     UlCircuitLossRx -
-    UlPhaseJitterLoss -
     UlSystemNoiseSpectralDensity - 10 * Math.log10(inp.ulDataRate);
   const UlRequiredEbN0 = getRequiredEbN0(inp.modulation, inp.coding, inp.reqBer);
   const UlMargin = UlReceivedEbN0 - UlRequiredEbN0;
@@ -420,7 +430,6 @@ function computePayloadOutputs(inp) {
     DlAtmosphericAttenuation,
     DlPointingLossRx,
     DlCircuitLossRx,
-    DlPhaseJitterLoss,
     DlSystemNoiseSpectralDensity,
     DlReceivedEbN0,
     DlRequiredEbN0,
@@ -438,7 +447,6 @@ function computePayloadOutputs(inp) {
     UlAtmosphericAttenuation,
     UlPointingLossRx,
     UlCircuitLossRx,
-    UlPhaseJitterLoss,
     UlSystemNoiseSpectralDensity,
     UlReceivedEbN0,
     UlRequiredEbN0,
@@ -489,7 +497,6 @@ function displayOutputs(out) {
   setText("out-dl-gs-gain", out.DlGSAntennaGain.toFixed(2));
   setText("out-dl-pointing-rx", `-${out.DlPointingLossRx.toFixed(2)}`);
   setText("out-dl-loss-rx", `-${out.DlCircuitLossRx.toFixed(2)}`);
-  setText("out-dl-jitter-loss", `-${out.DlPhaseJitterLoss.toFixed(2)}`);
   setText("out-dl-noise-density", out.DlSystemNoiseSpectralDensity.toFixed(2));
   setText("out-dl-ebn0", out.DlReceivedEbN0.toFixed(2));
   setText("out-dl-req-ebn0", out.DlRequiredEbN0.toFixed(2));
@@ -523,7 +530,6 @@ function displayOutputs(out) {
   setText("out-ul-sc-gain", out.UlSCAntennaGain.toFixed(2));
   setText("out-ul-pointing-rx", `-${out.UlPointingLossRx.toFixed(2)}`);
   setText("out-ul-loss-rx", `-${out.UlCircuitLossRx.toFixed(2)}`);
-  setText("out-ul-jitter-loss", `-${out.UlPhaseJitterLoss.toFixed(2)}`);
   setText("out-ul-noise-density", out.UlSystemNoiseSpectralDensity.toFixed(2));
   setText("out-ul-ebn0", out.UlReceivedEbN0.toFixed(2));
   setText("out-ul-req-ebn0", out.UlRequiredEbN0.toFixed(2));

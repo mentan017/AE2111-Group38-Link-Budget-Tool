@@ -12,10 +12,9 @@
   <header class="app-header">
     <div class="header-content">
       <h1>Spacecraft Telecommunications Link Budget Tool</h1>
-      <p>AE2111-II Spacecraft Design &amp; Systems Engineering Elements II &mdash; CCSDS 401.0-B Standardized Layout</p>
+      <p>AE2111-II Spacecraft Design &amp; Systems Engineering Elements II &mdash; Group 38</p>
     </div>
     <div class="header-actions">
-      <button type="button" class="btn btn-secondary">Reset Defaults</button>
       <button type="button" id="calc-btn" class="btn btn-primary">Calculate Link Budget</button>
     </div>
   </header>
@@ -218,20 +217,23 @@
           </div>
 
           <div class="field-row">
-            <label for="phase-jitter-loss">Phase Jitter Loss <span class="unit-tag">[ dB ]</span></label>
-            <div class="input-with-unit">
-              <input type="number" id="phase-jitter-loss" placeholder="0.2" step="any">
-              <span class="unit-addon">dB</span>
-            </div>
-          </div>
-
-          <div class="field-row">
             <label for="elevation-angle">Antenna Elevation Angle <span class="unit-tag">[ deg or rad ]</span></label>
             <div class="input-with-unit">
               <input type="number" id="elevation-angle" placeholder="10" step="any">
               <select id="elevation-angle-unit" aria-label="Antenna Elevation Angle Unit">
                 <option value="deg" selected>deg (&deg;)</option>
                 <option value="rad">rad</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="gs-pointing-error">Ground Station Pointing Error <span class="unit-tag">[ - or deg ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="gs-pointing-error" placeholder="0.95" step="any">
+              <select id="g-pointing-error-unit" aria-label="Ground Station Pointing Error Unit">
+                <option value="factor">Factor (-)</option>
+                <option value="deg" selected>deg (&deg;)</option>
               </select>
             </div>
           </div>
@@ -398,7 +400,7 @@
       <div class="panel-header">
         <div>
           <h2 id="heading-downlink">2. Downlink Output</h2>
-          <p class="panel-subtitle">Space-to-Earth Link Budget (CCSDS Table 4.1.2)</p>
+          <p class="panel-subtitle">Space-to-Earth Link Budget</p>
         </div>
         <span class="badge badge-dl">S/C &rarr; E/S</span>
       </div>
@@ -548,12 +550,7 @@
               <td><span class="unit-tag">dB</span></td>
             </tr>
             <tr>
-              <td><span class="tooltip" data-tooltip="CCSDS Ref: 73">Phase Jitter &amp; Demodulator Implementation Loss</span></td>
-              <td class="num" id="out-dl-jitter-loss">--.--</td>
-              <td><span class="unit-tag">dB</span></td>
-            </tr>
-            <tr>
-              <td><span class="tooltip" data-tooltip="CCSDS Ref: 168">System Noise Spectral Density (N<sub>0</sub> = k&middot;T<sub>sys,GS</sub>)</span></td>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 168">System Noise Spectral Density</span></td>
               <td class="num" id="out-dl-noise-density">--.--</td>
               <td><span class="unit-tag">dBW/Hz</span></td>
             </tr>
@@ -584,7 +581,7 @@
       <div class="panel-header">
         <div>
           <h2 id="heading-uplink">3. Uplink Output</h2>
-          <p class="panel-subtitle">Earth-to-Space Link Budget (CCSDS Table 4.1.2)</p>
+          <p class="panel-subtitle">Earth-to-Space Link Budget</p>
         </div>
         <span class="badge badge-ul">E/S &rarr; S/C</span>
       </div>
@@ -722,12 +719,7 @@
               <td><span class="unit-tag">dB</span></td>
             </tr>
             <tr>
-              <td><span class="tooltip" data-tooltip="CCSDS Ref: 25">Phase Jitter &amp; Demodulator Implementation Loss</span></td>
-              <td class="num" id="out-ul-jitter-loss">--.--</td>
-              <td><span class="unit-tag">dB</span></td>
-            </tr>
-            <tr>
-              <td><span class="tooltip" data-tooltip="CCSDS Ref: 118">System Noise Spectral Density (N<sub>0</sub> = k&middot;T<sub>sys,SC</sub>)</span></td>
+              <td><span class="tooltip" data-tooltip="CCSDS Ref: 118">System Noise Spectral Density</span></td>
               <td class="num" id="out-ul-noise-density">--.--</td>
               <td><span class="unit-tag">dBW/Hz</span></td>
             </tr>
