@@ -43,6 +43,7 @@ function getInputs() {
     "ul-data-rate",
     "proto-dlp",
     "proto-net",
+    "max-frame-size",
     "proto-overhead",
     "gs-pointing-error"
   ];
@@ -295,8 +296,11 @@ function getInputs() {
   const reqBer = getRaw("req-ber");
   const protoDlp = getRaw("proto-dlp");
   const protoNet = getRaw("proto-net");
-  const protoOverhead = getRaw("proto-overhead");
-  const protoOverheadUnit = getUnit("proto-overhead");
+  const maxFrameSize = parseFloat(getRaw("max-frame-size"));
+  let protoOverhead = parseFloat(getRaw("proto-overhead"));
+  if(getUnit("proto-overhead") === "bits"){
+    protoOverhead = protoOverhead/maxFrameSize;
+  }
 
   // 7. Return JSON-compatible object with all values
   return {
@@ -331,8 +335,8 @@ function getInputs() {
     reqBer,
     protoDlp,
     protoNet,
+    maxFrameSize,
     protoOverhead,
-    protoOverheadUnit,
     gsPointingError
   };
 }
@@ -343,7 +347,9 @@ function computePayloadOutputs(inp) {
   const payloadGeneratedDataRate = imageSize * inp.lineRate;
   const dataCollectedRaw = 24 * 3600 * inp.dutyCycle * payloadGeneratedDataRate;
   const dataCollectedCompressed = dataCollectedRaw / inp.compressionRatio;
-  const dlRequiredDataRate = dataCollectedCompressed / inp.downlinkTime;
+  const dataProtocolOverhead = inp.protoOverhead;
+  const maxFrameSize = inp.maxFrameSize;
+  const dlRequiredDataRate = dataCollectedCompressed * (1+dataProtocolOverhead) / inp.downlinkTime;
 
   // 2. Downlink Calculations (Space-to-Earth)
   const DlSCAntennaGain = 10 * Math.log10(
@@ -418,6 +424,8 @@ function computePayloadOutputs(inp) {
     payloadGeneratedDataRate,
     dataCollectedRaw,
     dataCollectedCompressed,
+    dataProtocolOverhead,
+    maxFrameSize,
     dlRequiredDataRate,
 
     DlSCAntennaGain,
@@ -481,10 +489,12 @@ function displayOutputs(out) {
   setText("out-dl-comp-gb", (out.dataCollectedCompressed / (8 * Math.pow(1024, 3))).toFixed(2) + " GB");
   setText("out-dl-line-rate", out.lineRate.toFixed(1));
   setText("out-dl-line-rate-khz", (out.lineRate / 1000).toFixed(2) + " kHz");
+  setText("out-dl-protocol-overhead", (out.dataProtocolOverhead*100).toFixed(2));
+  setText("out-dl-protocol-overhead-bits", (out.maxFrameSize*out.dataProtocolOverhead).toFixed(0) + " bits");
   setText("out-dl-gen-rate", out.payloadGeneratedDataRate.toExponential(2));
   setText("out-dl-gen-rate-mbps", (out.payloadGeneratedDataRate / 1e6).toFixed(2) + " Mbps");
   setText("out-dl-req-rate", out.dlRequiredDataRate.toExponential(2));
-  setText("out-dl-req-rate-dbhz", ((out.dlRequiredDataRate)/1e6).toFixed(2) + " Mbps");
+  setText("out-dl-req-rate-Mbps", ((out.dlRequiredDataRate)/1e6).toFixed(2) + " Mbps");
 
   // --- 3. Downlink Link Budget Breakdown Table ---
   setText("out-dl-tx-power", out.DlTransmitterPower.toFixed(2));
@@ -549,7 +559,6 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Missing some inputs");
     } else {
       const outputs = computePayloadOutputs(inputs);
-      console.log(outputs);
       displayOutputs(outputs);
     }
   });

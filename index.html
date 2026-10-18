@@ -197,7 +197,7 @@
           <div class="field-row">
             <label for="sc-tsys">Spacecraft System Temp (T<sub>sys,SC</sub>) <span class="unit-tag">[ K or dBK ]</span></label>
             <div class="input-with-unit">
-              <input type="number" id="sc-tsys" placeholder="600" step="any">
+              <input type="number" id="sc-tsys" placeholder="614" step="any">
               <select id="sc-tsys-unit" aria-label="Spacecraft System Temperature Unit">
                 <option value="K" selected>K</option>
                 <option value="dBK">dBK</option>
@@ -208,7 +208,7 @@
           <div class="field-row">
             <label for="atm-attenuation">Atmospheric Attenuation (Zenith / CD) <span class="unit-tag">[ dB or - ]</span></label>
             <div class="input-with-unit">
-              <input type="number" id="atm-attenuation" placeholder="0.1" step="any">
+              <input type="number" id="atm-attenuation" placeholder="0.9" step="any">
               <select id="atm-attenuation-unit" aria-label="Atmospheric Attenuation Unit">
                 <option value="dB" selected>dB</option>
                 <option value="factor">Factor (-)</option>
@@ -219,7 +219,7 @@
           <div class="field-row">
             <label for="elevation-angle">Antenna Elevation Angle <span class="unit-tag">[ deg or rad ]</span></label>
             <div class="input-with-unit">
-              <input type="number" id="elevation-angle" placeholder="10" step="any">
+              <input type="number" id="elevation-angle" placeholder="45" step="any">
               <select id="elevation-angle-unit" aria-label="Antenna Elevation Angle Unit">
                 <option value="deg" selected>deg (&deg;)</option>
                 <option value="rad">rad</option>
@@ -230,7 +230,7 @@
           <div class="field-row">
             <label for="gs-pointing-error">Ground Station Pointing Error <span class="unit-tag">[ - or deg ]</span></label>
             <div class="input-with-unit">
-              <input type="number" id="gs-pointing-error" placeholder="0.95" step="any">
+              <input type="number" id="gs-pointing-error" placeholder="0.9" step="any">
               <select id="g-pointing-error-unit" aria-label="Ground Station Pointing Error Unit">
                 <option value="factor">Factor (-)</option>
                 <option value="deg" selected>deg (&deg;)</option>
@@ -268,7 +268,7 @@
           <div class="field-row">
             <label for="bits-per-pixel">Payload Bits per Pixel <span class="unit-tag">[ bits/px ]</span></label>
             <div class="input-with-unit">
-              <input type="number" id="bits-per-pixel" placeholder="32" step="1">
+              <input type="number" id="bits-per-pixel" placeholder="8" step="1">
               <span class="unit-addon">bits/px</span>
             </div>
           </div>
@@ -306,7 +306,7 @@
           <div class="field-row">
             <label for="line-rate">Line Rate (Imager Scan Rate) <span class="unit-tag">[ lines/s or klines/s ]</span></label>
             <div class="input-with-unit">
-              <input type="number" id="line-rate" placeholder="5200" step="any">
+              <input type="number" id="line-rate" placeholder="1000" step="any">
               <select id="line-rate-unit" aria-label="Line Rate Unit">
                 <option value="lps" selected>lines/s (Hz)</option>
                 <option value="klps">klines/s (kHz)</option>
@@ -379,9 +379,17 @@
           </div>
 
           <div class="field-row">
-            <label for="proto-overhead">Protocol Frame Overhead <span class="unit-tag">[ % or bits/frame ]</span></label>
+            <label for="max-frame-size">Maximum Frame Size <span class="unit-tag">[ bits ]</span></label>
             <div class="input-with-unit">
-              <input type="number" id="proto-overhead" placeholder="5.0" step="any">
+              <input type="number" id="max-frame-size" placeholder="268435456" step="any">
+              <span class="unit-addon">bits</span>
+            </div>
+          </div>
+          
+          <div class="field-row">
+            <label for="proto-overhead">Protocol Frame Overhead <span class="unit-tag">[ bits/frame or % ]</span></label>
+            <div class="input-with-unit">
+              <input type="number" id="proto-overhead" placeholder="524520" step="any">
               <select id="proto-overhead-unit" aria-label="Protocol Overhead Unit">
                 <option value="pct" selected>%</option>
                 <option value="bits">bits/frame</option>
@@ -459,6 +467,12 @@
               <td class="num" id="out-dl-line-rate">--</td>
               <td class="num" id="out-dl-line-rate-khz">-- kHz</td>
               <td><span class="unit-tag">lines/s</span></td>
+            </tr>
+            <tr>
+              <td>Protocol Frame Overhead</td>
+              <td class="num" id="out-dl-protocol-overhead">--</td>
+              <td class="num" id="out-dl-protocol-overhead-bits">-- bits</td>
+              <td><span class="unit-tag">%</span></td>
             </tr>
             <tr>
               <td>Generated Payload Data Rate (R<sub>G</sub>)</td>
